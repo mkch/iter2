@@ -30,3 +30,18 @@ func ExampleConcat() {
 	// Output:
 	// [1 2 3 4 5]
 }
+
+func ExampleMerge() {
+	seq1 := slices.Values([]int{1, 2, 3})
+	seq2 := slices.Values([]int{4, 5})
+	seq := iter2.Merge(seq1, seq2)
+	for v := range seq {
+		fmt.Println(v)
+	}
+	// Unordered output:
+	// 1
+	// 2
+	// 3
+	// 4
+	// 5
+}

@@ -1,6 +1,9 @@
 package iter2
 
-import "iter"
+import (
+	"iter"
+	"sync"
+)
 
 // Zip returns an iter.Seq2 that pairs corresponding elements from iter1 and iter2.
 // Iteration stops when either of the seq1 or seq2 stops.
@@ -27,18 +30,65 @@ func Zip[T1, T2 any](seq1 iter.Seq[T1], seq2 iter.Seq[T2]) iter.Seq2[T1, T2] {
 }
 
 // Concat returns the concation of seqs.
+// Concat yields the values from seqs without interleaving them.
 func Concat[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		var ok bool
-		yield2 := func(v T) bool {
-			ok = yield(v)
-			return ok
-		}
 		for _, seq := range seqs {
-			seq(yield2)
-			if !ok {
-				return
+			for v := range seq {
+				if !yield(v) {
+					return
+				}
 			}
 		}
 	}
+}
+
+// Merge combines seqs into one by merging their values.
+// Merge may interleave the values yield by the merged Seq.
+// A similar func [Concat] does not interleave values, but
+// yields all of each source Seq's values in turn before beginning
+// to yield values from the next source Seq.
+func Merge[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
+	var n = len(seqs)
+	if n == 0 {
+		return func(yield func(T) bool) {}
+	}
+	return func(yield func(T) bool) {
+		doneR := make(chan struct{}) // done reading
+		doneW := make(chan struct{}) // done writing
+		ch := make(chan T)
+		wg := &sync.WaitGroup{}
+		wg.Add(n)
+		for _, seq := range seqs {
+			go func() {
+				defer wg.Done()
+				for v := range seq {
+					select {
+					case ch <- v:
+					case <-doneR:
+						return
+					}
+				}
+			}()
+		}
+		go func() {
+			wg.Wait()
+			close(doneW)
+		}()
+
+		for {
+			select {
+			case <-doneW:
+				return
+			case v := <-ch:
+				if !yield(v) {
+					// early stop
+					close(doneR)
+					wg.Wait()
+					return
+				}
+			}
+		}
+	}
+
 }
