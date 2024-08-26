@@ -30,11 +30,8 @@ select * from uid;
 	}
 	defer r.Close()
 
-	var ids []int
 	seq := iter2.AllRows[int](r)
-	for id := range seq {
-		ids = append(ids, *id)
-	}
+	ids := slices.Collect(iter2.Map(seq, func(p *int) int { return *p }))
 	if !slices.Equal(ids, []int{1, 2, 3}) {
 		t.Fatal(ids)
 	}

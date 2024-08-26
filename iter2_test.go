@@ -3,6 +3,7 @@ package iter2
 import (
 	"maps"
 	"slices"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -79,6 +80,20 @@ func TestMergeSlice(t *testing.T) {
 		m[v] = 0
 	}
 	if !maps.Equal(m, map[int]int{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}) {
+		t.Fatal(m)
+	}
+}
+
+func TestMap(t *testing.T) {
+	seq := Map(slices.Values([]int{1, 2, 3}), func(v int) string { return strconv.Itoa(v + 1) })
+	if s := slices.Collect(seq); !slices.Equal(s, []string{"2", "3", "4"}) {
+		t.Fatal(s)
+	}
+}
+
+func TestMap2(t *testing.T) {
+	seq := Map2(slices.All([]string{"a", "b", "c"}), func(k int, v string) (string, string) { return strconv.Itoa(k + 1), "V" + v })
+	if m := maps.Collect(seq); !maps.Equal(m, map[string]string{"1": "Va", "2": "Vb", "3": "Vc"}) {
 		t.Fatal(m)
 	}
 }

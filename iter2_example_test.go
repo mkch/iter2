@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/mkch/iter2"
 )
@@ -44,4 +46,24 @@ func ExampleMerge() {
 	// 3
 	// 4
 	// 5
+}
+
+func ExampleMap() {
+	iter := slices.Values([]int{1, 2, 3})
+	seq := iter2.Map(iter, func(v int) string { return strconv.Itoa(v + 1) })
+	fmt.Printf("%q", slices.Collect(seq))
+	// Output:
+	// ["2" "3" "4"]
+}
+
+func ExampleMap2() {
+	iter := slices.All([]int{1, 2, 3})
+	seq := iter2.Map2(iter, func(i int, v int) (int, string) { return i + 1, strings.Repeat("a", v) })
+	for k, v := range seq {
+		fmt.Printf("%v %q\n", k, v)
+	}
+	// Output:
+	// 1 "a"
+	// 2 "aa"
+	// 3 "aaa"
 }
