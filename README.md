@@ -8,7 +8,23 @@
     func ExampleZip() {
         ks := []int{1, 2, 3}
         vs := []string{"one", "two", "three"}
-        zipped := iter2.Zip(slices.Values(ks), slices.Values(vs))
+
+        type pair struct {
+            N   int
+            Str string
+        }
+
+        s := slices.Collect(iter2.Zip(slices.Values(ks), slices.Values(vs), func(i int, s string) pair { return pair{i, s} }))
+        fmt.Println(s)
+        // Output: [{1 one} {2 two} {3 three}]
+    }
+    ```
+
+    ```go
+    func ExampleZip() {
+        ks := []int{1, 2, 3}
+        vs := []string{"one", "two", "three"}
+        zipped := iter2.Zip2(slices.Values(ks), slices.Values(vs))
         m := maps.Collect(zipped)
         for k, v := range m {
             fmt.Println(k, v)

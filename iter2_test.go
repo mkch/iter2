@@ -12,7 +12,22 @@ func TestZip(t *testing.T) {
 	ks := []int{1, 2, 3}
 	vs := []string{"one", "two", "three"}
 
-	m := maps.Collect(Zip(slices.Values(ks), slices.Values(vs)))
+	type pair struct {
+		N   int
+		Str string
+	}
+
+	s := slices.Collect(Zip(slices.Values(ks), slices.Values(vs), func(i int, s string) pair { return pair{i, s} }))
+	if !slices.Equal(s, []pair{{1, "one"}, {2, "two"}, {3, "three"}}) {
+		t.Fatal(s)
+	}
+}
+
+func TestZip2(t *testing.T) {
+	ks := []int{1, 2, 3}
+	vs := []string{"one", "two", "three"}
+
+	m := maps.Collect(Zip2(slices.Values(ks), slices.Values(vs)))
 	if !maps.Equal(m, map[int]string{1: "one", 2: "two", 3: "three"}) {
 		t.Fatal(m)
 	}
