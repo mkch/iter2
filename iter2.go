@@ -1,6 +1,7 @@
 package iter2
 
 import (
+	"io/fs"
 	"iter"
 	"sync"
 )
@@ -148,4 +149,104 @@ func Map1To2[T, K, V any](seq iter.Seq[T], f func(v T) (K, V)) iter.Seq2[K, V] {
 			}
 		}
 	}
+}
+
+// Keys returns an iterator over keys in seq2.
+func Keys[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k, _ := range seq2 {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+// Keys returns an iterator over values in seq2.
+func Values[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range seq2 {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// Take returns an iterator that yields the first n values in seq.
+// Take panics if n < 0.
+func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
+	if n < 0 {
+		panic("negative count")
+	}
+	return func(yield func(T) bool) {
+		var count = 0
+		for v := range seq {
+			if count >= n {
+				return
+			}
+			if !yield(v) {
+				return
+			}
+			count++
+		}
+	}
+}
+
+// Take returns an iterator that yields the first n values in seq2.
+// Take panics if n < 0.
+func Take2[K, V any](seq2 iter.Seq2[K, V], n int) iter.Seq2[K, V] {
+	if n < 0 {
+		panic("negative count")
+	}
+	return func(yield func(K, V) bool) {
+		var count = 0
+		for k, v := range seq2 {
+			if count >= n {
+				return
+			}
+			if !yield(k, v) {
+				return
+			}
+			count++
+		}
+	}
+}
+
+// DirEntry is a file or directory of a file tree.
+type DirEntry struct {
+	// Path contains the argument to WalkDir as a prefix. That is, if WalkDir is called with root argument "dir"
+	// and finds a file named "a" in that directory, the Path of yielded DirEntry is "dir/a".
+	Path string
+	// Entry is the [fs.DirEntry] for the named path.
+	Entry fs.DirEntry
+
+	err error
+}
+
+// SetError reports an error.
+// If err is nil the iteration continues.
+// If err is fs.SkipDir, the current directory (path if d.IsDir() is true, otherwise path's parent directory) will be skipped.
+// if err is fs.SkipAll, all remaining files and directories will be skipped.
+// Otherwise, if the function returns a non-nil error, WalkDir stops entirely and yields that error.
+func (dir *DirEntry) SetError(err error) {
+	dir.err = err
+}
+
+// WalkDir returns an iterator over the file tree rooted at root.
+// The returned Seq2 yields an err if error occurs.
+func WalkDir(fsys fs.FS, root string) iter.Seq2[*DirEntry, error] {
+	return func(yield func(*DirEntry, error) bool) {
+		if err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
+			dir := &DirEntry{Path: path, Entry: d}
+			if !yield(dir, err) {
+				dir.err = fs.SkipAll // early stop. skip all.
+			}
+			return dir.err
+		}); err != nil {
+			yield(&DirEntry{}, err)
+			return
+		}
+	}
+
 }

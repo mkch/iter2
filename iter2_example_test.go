@@ -2,7 +2,9 @@ package iter2_test
 
 import (
 	"fmt"
+	"io/fs"
 	"maps"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -90,4 +92,55 @@ func ExampleMap1To2() {
 	// 1 "1"
 	// 2 "2"
 	// 3 "3"
+}
+
+func ExampleKeys() {
+	seq2 := func(yield func(int, string) bool) {
+		if !yield(0, "zero") {
+			return
+		}
+		if !yield(1, "one") {
+			return
+		}
+	}
+	keys := iter2.Keys(seq2)
+	fmt.Println(slices.Collect(keys))
+	// Output: [0 1]
+}
+
+func ExampleValues() {
+	seq2 := func(yield func(int, string) bool) {
+		if !yield(0, "zero") {
+			return
+		}
+		if !yield(1, "one") {
+			return
+		}
+	}
+	values := iter2.Values(seq2)
+	fmt.Println(slices.Collect(values))
+	// Output: [zero one]
+}
+
+func ExampleTake() {
+	seq := slices.Values([]int{1, 2, 3, 4, 5})
+	seq = iter2.Take(seq, 2)
+	fmt.Println(slices.Collect(seq))
+	// Output: [1 2]
+}
+
+func ExampleWalkDir() {
+	dirs := iter2.WalkDir(os.DirFS("testdata"), ".")
+	for d, err := range dirs {
+		if err != nil {
+			// cause the iteration to stop or do nothing to continue.
+			d.SetError(err)
+			continue
+		}
+		if d.Path == "should_skip" {
+			d.SetError(fs.SkipDir)
+			break
+		}
+		fmt.Printf("Walk: %v\n", d.Path)
+	}
 }

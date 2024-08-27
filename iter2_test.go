@@ -1,7 +1,9 @@
 package iter2
 
 import (
+	"io/fs"
 	"maps"
+	"os"
 	"slices"
 	"strconv"
 	"testing"
@@ -118,5 +120,152 @@ func TestMap1To2(t *testing.T) {
 	seq2 := Map1To2(seq1, func(v int) (byte, string) { return byte(v), strconv.Itoa(v) })
 	if m := maps.Collect(seq2); !maps.Equal(m, map[byte]string{1: "1", 2: "2", 3: "3"}) {
 		t.Fatal(m)
+	}
+}
+
+func TestKeys(t *testing.T) {
+	seq2 := func(yield func(int, string) bool) {
+		if !yield(1, "one") {
+			return
+		}
+		if !yield(2, "two") {
+			return
+		}
+	}
+	var keys []int
+	if keys = slices.Collect(Keys(seq2)); !slices.Equal(keys, []int{1, 2}) {
+		t.Fatal(keys)
+	}
+
+	// early stop
+	keys = slices.Collect(Take(Keys(seq2), 1))
+	if !slices.Equal(keys, []int{1}) {
+		t.Fatal(keys)
+	}
+}
+
+func TestValues(t *testing.T) {
+	seq2 := func(yield func(int, string) bool) {
+		if !yield(1, "one") {
+			return
+		}
+		if !yield(2, "two") {
+			return
+		}
+	}
+	var values []string
+	if values = slices.Collect(Values(seq2)); !slices.Equal(values, []string{"one", "two"}) {
+		t.Fatal(values)
+	}
+
+	// early stop
+	values = slices.Collect(Take(Values(seq2), 1))
+	if !slices.Equal(values, []string{"one"}) {
+		t.Fatal(values)
+	}
+}
+
+func TestTake(t *testing.T) {
+	seq := slices.Values([]int{1, 2, 3})
+	seq = Take(seq, 2)
+	if s := slices.Collect(seq); !slices.Equal(s, []int{1, 2}) {
+		t.Fatal(s)
+	}
+
+	seq = Take(seq, 0)
+	if s := slices.Collect(seq); !slices.Equal(s, []int{}) {
+		t.Fatal(s)
+	}
+
+	var panicked any
+	func() {
+		defer func() {
+			panicked = recover()
+		}()
+		seq = Take(seq, -2)
+	}()
+	if panicked == nil {
+		t.Fatal("should panic")
+	}
+}
+
+func TestTake2(t *testing.T) {
+	seq2 := slices.All([]string{"one", "two", "three"})
+	seq2 = Take2(seq2, 2)
+	if m := maps.Collect(seq2); !maps.Equal(m, map[int]string{0: "one", 1: "two"}) {
+		t.Fatal(m)
+	}
+
+	seq2 = Take2(seq2, 0)
+	if m := maps.Collect(seq2); !maps.Equal(m, map[int]string{}) {
+		t.Fatal(m)
+	}
+
+	var panicked any
+	func() {
+		defer func() {
+			panicked = recover()
+		}()
+		seq2 = Take2(seq2, -2)
+	}()
+	if panicked == nil {
+		t.Fatal("should panic")
+	}
+}
+
+func TestWalkDir(t *testing.T) {
+	seq := WalkDir(os.DirFS("testdata"), ".")
+
+	files := Keys(Map2(seq, func(d *DirEntry, err error) (string, error) {
+		if err != nil {
+			panic(err)
+		}
+		return d.Path, nil
+	}))
+	s := slices.Collect(files)
+	if !slices.Equal(s, []string{".", "a", "b", "dir1", "dir1/a"}) {
+		t.Fatal(s)
+	}
+
+	// test early stop
+	s = slices.Collect(Take(files, 2))
+	if !slices.Equal(s, []string{".", "a"}) {
+		t.Fatal(s)
+	}
+
+	// test skip
+	s = nil
+	for d, err := range seq {
+		if err != nil {
+			panic(err)
+		}
+		if d.Entry.IsDir() && d.Path == "dir1" {
+			d.SetError(fs.SkipAll)
+			break
+		}
+		s = append(s, d.Path)
+	}
+	if !slices.Equal(s, []string{".", "a", "b"}) {
+		t.Fatal(s)
+	}
+}
+
+func TestWalkDirErr(t *testing.T) {
+	seq := WalkDir(os.DirFS("testdata"), "NO THIS FILE")
+
+	var s []string
+	var err error
+	var d *DirEntry
+	for d, err = range seq {
+		if err != nil {
+			continue
+		}
+		s = append(s, d.Path)
+	}
+	if !slices.Equal(s, []string{}) {
+		t.Fatal(s)
+	}
+	if err == nil || !os.IsNotExist(err) {
+		t.Fatal("should be not exist")
 	}
 }
