@@ -183,6 +183,7 @@ func TestTake(t *testing.T) {
 		}()
 		seq = Take(seq, -2)
 	}()
+
 	if panicked == nil {
 		t.Fatal("should panic")
 	}
@@ -209,6 +210,51 @@ func TestTake2(t *testing.T) {
 	}()
 	if panicked == nil {
 		t.Fatal("should panic")
+	}
+}
+
+func TestTakeCount(t *testing.T) {
+	var yieldCount = 0
+	seq := func(y func(int) bool) {
+		yield := func(i int) bool {
+			yieldCount++
+			return y(i)
+		}
+		if !yield(0) {
+			return
+		}
+		if !yield(1) {
+			return
+		}
+	}
+	if s := slices.Collect(Take(seq, 1)); !slices.Equal(s, []int{0}) {
+		t.Fatal(s)
+	}
+	if yieldCount != 1 {
+		t.Fatal(yieldCount)
+	}
+
+	yieldCount = 0
+	seq2 := func(y func(int, int) bool) {
+		yield := func(k, v int) bool {
+			yieldCount++
+			return y(k, v)
+		}
+		if !yield(0, 0) {
+			return
+		}
+		if !yield(1, 1) {
+			return
+		}
+		if !yield(2, 2) {
+			return
+		}
+	}
+	if s := slices.Collect(Keys(Take2(seq2, 2))); !slices.Equal(s, []int{0, 1}) {
+		t.Fatal(s)
+	}
+	if yieldCount != 2 {
+		t.Fatal(yieldCount)
 	}
 }
 
@@ -281,5 +327,87 @@ func TestWalkDirErr(t *testing.T) {
 	}
 	if err == nil || !os.IsNotExist(err) {
 		t.Fatal("should be not exist")
+	}
+}
+
+func TestPush(t *testing.T) {
+	seq, yield, stop := Push[int]()
+
+	go func() {
+		defer stop()
+		if !yield(1) {
+			return
+		}
+		if !yield(2) {
+			return
+		}
+		if !yield(3) {
+			return
+		}
+	}()
+
+	if s := slices.Collect(seq); !slices.Equal(s, []int{1, 2, 3}) {
+		t.Fatal(s)
+	}
+
+	// early stop
+	seq, yield, stop = Push[int]()
+
+	go func() {
+		defer stop()
+		if !yield(1) {
+			return
+		}
+		if !yield(2) {
+			return
+		}
+		if !yield(3) {
+			return
+		}
+	}()
+
+	if s := slices.Collect(Take(seq, 1)); !slices.Equal(s, []int{1}) {
+		t.Fatal(s)
+	}
+}
+
+func TestPush2(t *testing.T) {
+	seq, yield, stop := Push2[int, string]()
+
+	go func() {
+		defer stop()
+		if !yield(1, "one") {
+			return
+		}
+		if !yield(2, "two") {
+			return
+		}
+		if !yield(3, "three") {
+			return
+		}
+	}()
+
+	if m := maps.Collect(seq); !maps.Equal(m, map[int]string{1: "one", 2: "two", 3: "three"}) {
+		t.Fatal(m)
+	}
+
+	// early stop
+	seq, yield, stop = Push2[int, string]()
+
+	go func() {
+		defer stop()
+		if !yield(1, "one") {
+			return
+		}
+		if !yield(2, "two") {
+			return
+		}
+		if !yield(3, "three") {
+			return
+		}
+	}()
+
+	if m := maps.Collect(Take2(seq, 1)); !maps.Equal(m, map[int]string{1: "one"}) {
+		t.Fatal(m)
 	}
 }

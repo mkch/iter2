@@ -178,17 +178,19 @@ func Values[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[V] {
 func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
 	if n < 0 {
 		panic("negative count")
+	} else if n == 0 {
+		return func(yield func(T) bool) {}
 	}
 	return func(yield func(T) bool) {
 		var count = 0
 		for v := range seq {
-			if count >= n {
-				return
-			}
 			if !yield(v) {
 				return
 			}
 			count++
+			if count >= n {
+				return
+			}
 		}
 	}
 }
@@ -198,17 +200,19 @@ func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
 func Take2[K, V any](seq2 iter.Seq2[K, V], n int) iter.Seq2[K, V] {
 	if n < 0 {
 		panic("negative count")
+	} else if n == 0 {
+		return func(yield func(K, V) bool) {}
 	}
 	return func(yield func(K, V) bool) {
 		var count = 0
 		for k, v := range seq2 {
-			if count >= n {
-				return
-			}
 			if !yield(k, v) {
 				return
 			}
 			count++
+			if count >= n {
+				return
+			}
 		}
 	}
 }
@@ -246,4 +250,97 @@ func WalkDir(fsys fs.FS, root string) iter.Seq2[*DirEntry, error] {
 		})
 	}
 
+}
+
+// Push creates an iterator whose values are yielded by function calls.
+// Calling yield pushes the next value onto the sequence, stopping early if yield returns false.
+// Stop ends the iteration. It must be called when the caller has no next value to push.
+// It is valid to call stop multiple times. Typically, callers should “defer stop()”.
+// It is safe to call yield and stop from multiple goroutines simultaneously.
+//
+// Push is useful when yielding values out of a loop.
+func Push[T any]() (seq iter.Seq[T], yield func(T) bool, stop func()) {
+	var ch = make(chan T)
+	var doneW = make(chan struct{})
+	var doneR = make(chan struct{})
+	seq = func(yield func(T) bool) {
+		defer close(doneR)
+		for {
+			select {
+			case v := <-ch:
+				if !yield(v) {
+					return
+				}
+			case <-doneW:
+				return
+			}
+		}
+	}
+	yield = func(v T) bool {
+		select {
+		case ch <- v:
+			return true
+		case <-doneR:
+			return false
+		}
+	}
+	var stopLock sync.Mutex
+	stop = func() {
+		stopLock.Lock()
+		defer stopLock.Unlock()
+
+		select {
+		case <-doneW:
+			return
+		default:
+			close(doneW)
+		}
+	}
+	return
+}
+
+// Push2 creates an iterator whose values are yielded by function calls.
+// Push2 works the same way as [Push], except for the type parameters.
+func Push2[K, V any]() (seq2 iter.Seq2[K, V], yield func(K, V) bool, stop func()) {
+	type pair struct {
+		K K
+		V V
+	}
+	var ch = make(chan pair)
+	var doneW = make(chan struct{})
+	var doneR = make(chan struct{})
+	seq2 = func(yield func(K, V) bool) {
+		defer close(doneR)
+		for {
+			select {
+			case pair := <-ch:
+				if !yield(pair.K, pair.V) {
+					return
+				}
+			case <-doneW:
+				return
+			}
+		}
+	}
+	yield = func(k K, v V) bool {
+		select {
+		case ch <- pair{k, v}:
+			return true
+		case <-doneR:
+			return false
+		}
+	}
+	var stopLock sync.Mutex
+	stop = func() {
+		stopLock.Lock()
+		defer stopLock.Unlock()
+
+		select {
+		case <-doneW:
+			return
+		default:
+			close(doneW)
+		}
+	}
+	return
 }

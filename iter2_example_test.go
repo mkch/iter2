@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mkch/iter2"
 )
@@ -140,4 +141,23 @@ func ExampleWalkDir() {
 		}
 		fmt.Printf("Walk: %v\n", d.Path)
 	}
+}
+
+func ExamplePush() {
+	seq, yield, stop := iter2.Push[int]()
+	defer stop()
+	time.AfterFunc(time.Millisecond*1, func() {
+		yield(1)
+		time.AfterFunc(time.Millisecond*1, func() {
+			yield(2)
+			stop()
+		})
+	})
+
+	for t := range seq {
+		fmt.Println(t)
+	}
+	// Output:
+	// 1
+	// 2
 }
