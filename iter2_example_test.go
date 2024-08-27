@@ -79,3 +79,15 @@ func ExampleMap2() {
 	// 2 "aa"
 	// 3 "aaa"
 }
+
+func ExampleMap1To2() {
+	seq1 := slices.Values([]int{1, 2, 3})
+	seq2 := iter2.Map1To2(seq1, func(v int) (byte, string) { return byte(v), strconv.Itoa(v) })
+	for k, v := range seq2 {
+		fmt.Printf("%v %q\n", k, v)
+	}
+	// Output:
+	// 1 "1"
+	// 2 "2"
+	// 3 "3"
+}

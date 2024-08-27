@@ -138,3 +138,14 @@ func Map2[K1, V1, K2, V2 any](seq iter.Seq2[K1, V1], f func(K1, V1) (K2, V2)) it
 		}
 	}
 }
+
+// Map1To2 returns a iter.Seq2 that contains a sequence transformed form seq by func f.
+func Map1To2[T, K, V any](seq iter.Seq[T], f func(v T) (K, V)) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for v := range seq {
+			if !yield(f(v)) {
+				return
+			}
+		}
+	}
+}

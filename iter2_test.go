@@ -112,3 +112,11 @@ func TestMap2(t *testing.T) {
 		t.Fatal(m)
 	}
 }
+
+func TestMap1To2(t *testing.T) {
+	seq1 := slices.Values([]int{1, 2, 3})
+	seq2 := Map1To2(seq1, func(v int) (byte, string) { return byte(v), strconv.Itoa(v) })
+	if m := maps.Collect(seq2); !maps.Equal(m, map[byte]string{1: "1", 2: "2", 3: "3"}) {
+		t.Fatal(m)
+	}
+}
