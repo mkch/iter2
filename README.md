@@ -79,12 +79,10 @@
 
         users := slices.Collect(
             iter2.Map(
-                iter2.MustAllRows(db.Query(q)), func(row iter2.Row) User {
-                    var id int
-                    var name string
-                    row.Scan(&id, &name)
-                    return User{id, name}
-                }))
+                iter2.MustAllRows(db.Query(q)), func(row iter2.Row) (user User) {
+                row.Scan(&user.ID, &user.Name)
+                return
+            }))
         fmt.Println(users)
         // Should output:
         // [{1 User1} {2 User2} {3 User3}]
