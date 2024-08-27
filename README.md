@@ -2,7 +2,9 @@
 
  Go iter utilities.
 
-1. Zip:
+1. Operations of iterator:
+
+    Zipping two Seqs to one Seq of pairs:
 
     ```go
     func ExampleZip() {
@@ -20,8 +22,10 @@
     }
     ```
 
+    Zipping tow Seqs to one Seq2:
+
     ```go
-    func ExampleZip() {
+    func ExampleZip2() {
         ks := []int{1, 2, 3}
         vs := []string{"one", "two", "three"}
         zipped := iter2.Zip2(slices.Values(ks), slices.Values(vs))
@@ -36,7 +40,7 @@
     }
     ```
 
-2. Concat:
+    Concating 2 Seqs:
 
     ```go
     func ExampleConcat() {
@@ -49,7 +53,7 @@
     }
     ```
 
-3. Map DB rows:
+2. Map DB rows:
 
     ```go
     import (
@@ -88,3 +92,5 @@
         // [{1 User1} {2 User2} {3 User3}]
     }
     ```
+
+More [examples](https://pkg.go.dev/github.com/mkch/iter2#pkg-examples) here.
