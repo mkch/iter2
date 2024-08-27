@@ -224,29 +224,26 @@ type DirEntry struct {
 	err error
 }
 
-// SetError reports an error.
-// If err is nil the iteration continues.
-// If err is fs.SkipDir, the current directory (path if d.IsDir() is true, otherwise path's parent directory) will be skipped.
-// if err is fs.SkipAll, all remaining files and directories will be skipped.
-// Otherwise, if the function returns a non-nil error, WalkDir stops entirely and yields that error.
-func (dir *DirEntry) SetError(err error) {
-	dir.err = err
+// SkipDir skips the current directory (path if d.IsDir() is true, otherwise path's parent directory).
+func (dir *DirEntry) SkipDir() {
+	dir.err = fs.SkipDir
+}
+
+// SkipAll skips all remaining files and directories.
+func (dir *DirEntry) SkipAll() {
+	dir.err = fs.SkipAll
 }
 
 // WalkDir returns an iterator over the file tree rooted at root.
-// The returned Seq2 yields an err if error occurs.
 func WalkDir(fsys fs.FS, root string) iter.Seq2[*DirEntry, error] {
 	return func(yield func(*DirEntry, error) bool) {
-		if err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
+		fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
 			dir := &DirEntry{Path: path, Entry: d}
 			if !yield(dir, err) {
 				dir.err = fs.SkipAll // early stop. skip all.
 			}
 			return dir.err
-		}); err != nil {
-			yield(&DirEntry{}, err)
-			return
-		}
+		})
 	}
 
 }

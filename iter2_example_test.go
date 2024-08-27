@@ -2,7 +2,6 @@ package iter2_test
 
 import (
 	"fmt"
-	"io/fs"
 	"maps"
 	"os"
 	"slices"
@@ -133,13 +132,11 @@ func ExampleWalkDir() {
 	dirs := iter2.WalkDir(os.DirFS("testdata"), ".")
 	for d, err := range dirs {
 		if err != nil {
-			// cause the iteration to stop or do nothing to continue.
-			d.SetError(err)
-			continue
+			continue // continue to ignore the error
 		}
 		if d.Path == "should_skip" {
-			d.SetError(fs.SkipDir)
-			break
+			d.SkipDir()
+			continue
 		}
 		fmt.Printf("Walk: %v\n", d.Path)
 	}

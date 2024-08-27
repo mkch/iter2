@@ -1,7 +1,6 @@
 package iter2
 
 import (
-	"io/fs"
 	"maps"
 	"os"
 	"slices"
@@ -223,7 +222,7 @@ func TestWalkDir(t *testing.T) {
 		return d.Path, nil
 	}))
 	s := slices.Collect(files)
-	if !slices.Equal(s, []string{".", "a", "b", "dir1", "dir1/a"}) {
+	if !slices.Equal(s, []string{".", "a", "b", "dir1", "dir1/a", "e"}) {
 		t.Fatal(s)
 	}
 
@@ -240,12 +239,27 @@ func TestWalkDir(t *testing.T) {
 			panic(err)
 		}
 		if d.Entry.IsDir() && d.Path == "dir1" {
-			d.SetError(fs.SkipAll)
-			break
+			d.SkipAll()
+			continue
 		}
 		s = append(s, d.Path)
 	}
 	if !slices.Equal(s, []string{".", "a", "b"}) {
+		t.Fatal(s)
+	}
+
+	s = nil
+	for d, err := range seq {
+		if err != nil {
+			panic(err)
+		}
+		if d.Entry.IsDir() && d.Path == "dir1" {
+			d.SkipDir()
+			continue
+		}
+		s = append(s, d.Path)
+	}
+	if !slices.Equal(s, []string{".", "a", "b", "e"}) {
 		t.Fatal(s)
 	}
 }
