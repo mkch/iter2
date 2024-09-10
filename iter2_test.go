@@ -421,6 +421,12 @@ func TestFilter(t *testing.T) {
 	if s := slices.Collect(Filter(func(yield func(int) bool) {}, func(int) bool { return true })); len(s) != 0 {
 		t.Fatal(s)
 	}
+
+	// early stop
+	seq := Filter(slices.Values([]int{1, 2, 3, 4, 5, 6}), func(n int) bool { return n%2 == 0 })
+	if s := slices.Collect(Take(seq, 1)); !slices.Equal(s, []int{2}) {
+		t.Fatal(s)
+	}
 }
 
 func TestFilter2(t *testing.T) {
@@ -430,6 +436,51 @@ func TestFilter2(t *testing.T) {
 	}
 
 	if m := maps.Collect(Filter2(func(yield func(int, int) bool) {}, func(int, int) bool { return true })); len(m) != 0 {
+		t.Fatal(m)
+	}
+
+	// early stop
+	seq := Filter2(
+		maps.All(map[int]int{1: 6, 2: 5, 3: 4, 4: 3, 5: 2, 6: 1}), func(k, v int) bool { return k-v == 1 || v-k == 1 })
+	if m := maps.Collect(Take2(seq, 1)); m[4] != 3 && m[3] != 4 {
+		t.Fatal(m)
+	}
+}
+
+func TestEmpty(t *testing.T) {
+	if s := slices.Collect(Empty[int]); len(s) != 0 {
+		t.Fatal(s)
+	}
+
+	if m := maps.Collect(Empty2[int, struct{}]); len(m) != 0 {
+		t.Fatal(m)
+	}
+}
+
+func TestJust(t *testing.T) {
+	if s := slices.Collect(Just(1, 2, 3)); !slices.Equal(s, []int{1, 2, 3}) {
+		t.Fatal(s)
+	}
+
+	if s := slices.Collect(Just[int]()); len(s) != 0 {
+		t.Fatal(s)
+	}
+
+	if s := slices.Collect(Take(Just(1, 2, 3), 2)); !slices.Equal(s, []int{1, 2}) {
+		t.Fatal(s)
+	}
+}
+
+func TestJust2(t *testing.T) {
+	if m := maps.Collect(Just2([]Pair[int, int]{{0, 1}, {1, 2}}...)); !maps.Equal(m, map[int]int{0: 1, 1: 2}) {
+		t.Fatal(m)
+	}
+
+	if m := maps.Collect(Just2[int, int]()); len(m) != 0 {
+		t.Fatal(m)
+	}
+
+	if m := maps.Collect(Take2(Just2([]Pair[int, int]{{0, 1}, {1, 2}}...), 1)); !maps.Equal(m, map[int]int{0: 1}) {
 		t.Fatal(m)
 	}
 }

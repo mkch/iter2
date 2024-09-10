@@ -3,6 +3,7 @@ package iter2
 import (
 	"io/fs"
 	"iter"
+	"slices"
 	"sync"
 )
 
@@ -367,6 +368,34 @@ func Filter2[K, V any](seq iter.Seq2[K, V], test func(K, V) bool) iter.Seq2[K, V
 				continue
 			}
 			if !yield(k, v) {
+				return
+			}
+		}
+	}
+}
+
+// Empty is an empty iterator yields no value.
+func Empty[V any](yield func(V) bool) {}
+
+// Empty is an empty iterator yields no key-value pair.
+func Empty2[K, V any](yield func(K, V) bool) {}
+
+// Just returns an iterator over values.
+func Just[V any](values ...V) iter.Seq[V] {
+	return slices.Values(values)
+}
+
+// Pair is a key-value pair.
+type Pair[K, V any] struct {
+	Key   K
+	Value V
+}
+
+// Just returns an iterator over key-value pairs.
+func Just2[K, V any](pairs ...Pair[K, V]) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for _, pair := range pairs {
+			if !yield(pair.Key, pair.Value) {
 				return
 			}
 		}
