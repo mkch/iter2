@@ -118,7 +118,7 @@ func Merge[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 
 }
 
-// Map returns a iter.Seq that contains a sequence transformed form seq by func f.
+// Map returns an iter.Seq that contains a sequence transformed form seq by func f.
 func Map[T1, T2 any](seq iter.Seq[T1], f func(T1) T2) iter.Seq[T2] {
 	return func(yield func(T2) bool) {
 		for v := range seq {
@@ -129,7 +129,7 @@ func Map[T1, T2 any](seq iter.Seq[T1], f func(T1) T2) iter.Seq[T2] {
 	}
 }
 
-// Map returns a iter.Seq2 that contains a sequence transformed form seq by func f.
+// Map returns an iter.Seq2 that contains a sequence transformed form seq by func f.
 func Map2[K1, V1, K2, V2 any](seq iter.Seq2[K1, V1], f func(K1, V1) (K2, V2)) iter.Seq2[K2, V2] {
 	return func(yield func(K2, V2) bool) {
 		for k, v := range seq {
@@ -140,7 +140,7 @@ func Map2[K1, V1, K2, V2 any](seq iter.Seq2[K1, V1], f func(K1, V1) (K2, V2)) it
 	}
 }
 
-// Map1To2 returns a iter.Seq2 that contains a sequence transformed form seq by func f.
+// Map1To2 returns an iter.Seq2 that contains a sequence transformed form seq by func f.
 func Map1To2[T, K, V any](seq iter.Seq[T], f func(v T) (K, V)) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for v := range seq {
@@ -343,4 +343,32 @@ func Push2[K, V any]() (seq2 iter.Seq2[K, V], yield func(K, V) bool, stop func()
 		}
 	}
 	return
+}
+
+// Filter returns an iterator over the sequence of elements in seq that pass the test.
+func Filter[T any](seq iter.Seq[T], test func(T) bool) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for v := range seq {
+			if !test(v) {
+				continue
+			}
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// Filter returns an iterator over the sequence of elements in seq that pass the test.
+func Filter2[K, V any](seq iter.Seq2[K, V], test func(K, V) bool) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for k, v := range seq {
+			if !test(k, v) {
+				continue
+			}
+			if !yield(k, v) {
+				return
+			}
+		}
+	}
 }

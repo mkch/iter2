@@ -161,3 +161,23 @@ func ExamplePush() {
 	// 1
 	// 2
 }
+
+func ExampleFilter() {
+	s := []int{1, 2, 3, 4}
+	even := iter2.Filter(slices.Values(s),
+		func(n int) bool { return n%2 == 0 })
+	fmt.Println(slices.Collect(even))
+	// Output: [2 4]
+}
+
+func ExampleFilter2() {
+	s := []int{1, 2, 3, 4}
+	even := iter2.Filter2(slices.All(s),
+		func(i, n int) bool { return n%2 == 0 })
+	for i, n := range even {
+		fmt.Println(i, n)
+	}
+	// Unordered output:
+	// 1 2
+	// 3 4
+}

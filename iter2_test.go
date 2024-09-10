@@ -411,3 +411,25 @@ func TestPush2(t *testing.T) {
 		t.Fatal(m)
 	}
 }
+
+func TestFilter(t *testing.T) {
+	if s := slices.Collect(Filter(
+		slices.Values([]int{1, 2, 3, 4, 5, 6}), func(n int) bool { return n%2 == 0 })); !slices.Equal(s, []int{2, 4, 6}) {
+		t.Fatal(s)
+	}
+
+	if s := slices.Collect(Filter(func(yield func(int) bool) {}, func(int) bool { return true })); len(s) != 0 {
+		t.Fatal(s)
+	}
+}
+
+func TestFilter2(t *testing.T) {
+	if m := maps.Collect(Filter2(
+		maps.All(map[int]int{1: 6, 2: 5, 3: 4, 4: 3, 5: 2, 6: 1}), func(k, v int) bool { return k-v == 1 })); !maps.Equal(m, map[int]int{4: 3}) {
+		t.Fatal(m)
+	}
+
+	if m := maps.Collect(Filter2(func(yield func(int, int) bool) {}, func(int, int) bool { return true })); len(m) != 0 {
+		t.Fatal(m)
+	}
+}
