@@ -385,17 +385,14 @@ func Just[V any](values ...V) iter.Seq[V] {
 	return slices.Values(values)
 }
 
-// Pair is a key-value pair.
-type Pair[K, V any] struct {
-	Key   K
-	Value V
-}
-
 // Just returns an iterator over key-value pairs.
-func Just2[K, V any](pairs ...Pair[K, V]) iter.Seq2[K, V] {
+func Just2[K, V any](pairs ...struct {
+	K K
+	V V
+}) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for _, pair := range pairs {
-			if !yield(pair.Key, pair.Value) {
+			if !yield(pair.K, pair.V) {
 				return
 			}
 		}

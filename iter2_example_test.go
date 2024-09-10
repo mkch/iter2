@@ -181,3 +181,23 @@ func ExampleFilter2() {
 	// 1 2
 	// 3 4
 }
+
+func ExampleJust() {
+	seq := iter2.Just(1, 2, 3)
+	fmt.Println(slices.Collect(seq))
+	// Output: [1 2 3]
+}
+
+func ExampleJust2() {
+	type KV = struct {
+		K int
+		V string
+	}
+	seq := iter2.Just2(KV{1, "one"}, KV{2, "two"})
+	for k, v := range seq {
+		fmt.Println(k, v)
+	}
+	// Output:
+	// 1 one
+	// 2 two
+}

@@ -472,7 +472,11 @@ func TestJust(t *testing.T) {
 }
 
 func TestJust2(t *testing.T) {
-	if m := maps.Collect(Just2([]Pair[int, int]{{0, 1}, {1, 2}}...)); !maps.Equal(m, map[int]int{0: 1, 1: 2}) {
+	type IntInt = struct {
+		K int
+		V int
+	}
+	if m := maps.Collect(Just2([]IntInt{{0, 1}, {1, 2}}...)); !maps.Equal(m, map[int]int{0: 1, 1: 2}) {
 		t.Fatal(m)
 	}
 
@@ -480,7 +484,7 @@ func TestJust2(t *testing.T) {
 		t.Fatal(m)
 	}
 
-	if m := maps.Collect(Take2(Just2([]Pair[int, int]{{0, 1}, {1, 2}}...), 1)); !maps.Equal(m, map[int]int{0: 1}) {
+	if m := maps.Collect(Take2(Just2([]IntInt{{0, 1}, {1, 2}}...), 1)); !maps.Equal(m, map[int]int{0: 1}) {
 		t.Fatal(m)
 	}
 }
