@@ -1,6 +1,7 @@
 package iter2_test
 
 import (
+	"bufio"
 	"fmt"
 	"maps"
 	"os"
@@ -200,4 +201,28 @@ func ExampleJust2() {
 	// Output:
 	// 1 one
 	// 2 two
+}
+
+func ExampleTokens() {
+	r := bufio.NewScanner(strings.NewReader("abc\ndef"))
+	lines := iter2.Tokens(r)
+	for line := range lines {
+		fmt.Printf("%s\n", line)
+	}
+	// Output:
+	// abc
+	// def
+}
+
+func ExampleTokenStrings() {
+	r := bufio.NewScanner(strings.NewReader("Some words here"))
+	r.Split(bufio.ScanWords)
+	lines := iter2.TokenStrings(r)
+	for line := range lines {
+		fmt.Printf("%s\n", line)
+	}
+	// Output:
+	// Some
+	// words
+	// here
 }

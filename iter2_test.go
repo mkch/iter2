@@ -1,10 +1,12 @@
 package iter2
 
 import (
+	"bufio"
 	"maps"
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -486,5 +488,23 @@ func TestJust2(t *testing.T) {
 
 	if m := maps.Collect(Take2(Just2([]IntInt{{0, 1}, {1, 2}}...), 1)); !maps.Equal(m, map[int]int{0: 1}) {
 		t.Fatal(m)
+	}
+}
+
+func TestTokens(t *testing.T) {
+	iter := Tokens(bufio.NewScanner(strings.NewReader("abc\ndef\r\n")))
+	lines := slices.Collect(iter)
+	if !slices.EqualFunc(lines,
+		[][]byte{[]byte("abc"), []byte("def")},
+		func(s1, s2 []byte) bool { return slices.Equal(s1, s2) }) {
+		t.Fatal(lines)
+	}
+}
+
+func TestStrings(t *testing.T) {
+	iter := TokenStrings(bufio.NewScanner(strings.NewReader("abc\ndef\r\n")))
+	lines := slices.Collect(iter)
+	if !slices.Equal(lines, []string{"abc", "def"}) {
+		t.Fatal(lines)
 	}
 }
