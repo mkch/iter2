@@ -155,7 +155,7 @@ func Map1To2[T, K, V any](seq iter.Seq[T], f func(v T) (K, V)) iter.Seq2[K, V] {
 // Keys returns an iterator over keys in seq2.
 func Keys[K, V any](seq2 iter.Seq2[K, V]) iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for k, _ := range seq2 {
+		for k := range seq2 {
 			if !yield(k) {
 				return
 			}
