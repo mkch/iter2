@@ -124,6 +124,19 @@ func TestMap1To2(t *testing.T) {
 	}
 }
 
+func TestMap2To1(t *testing.T) {
+	m := map[int]string{1: "1", 2: "2"}
+	seq1 := maps.All(m)
+	type kv struct {
+		k int
+		v string
+	}
+	seq2 := Map2To1(seq1, func(k int, v string) kv { return kv{k, v} })
+	if got := maps.Collect(Map1To2(seq2, func(kv kv) (int, string) { return kv.k, kv.v })); !maps.Equal(got, m) {
+		t.Fatal(got)
+	}
+}
+
 func TestKeys(t *testing.T) {
 	seq2 := func(yield func(int, string) bool) {
 		if !yield(1, "one") {
